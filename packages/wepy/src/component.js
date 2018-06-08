@@ -12,27 +12,27 @@ import util from './util';
 
 
 const Props = {
-    check (t, val) {
+    check(t, val) {
         switch (t) {
             case String:
-                return typeof(val) === 'string';
+                return typeof (val) === 'string';
             case Number:
-                return typeof(val) === 'number';
+                return typeof (val) === 'number';
             case Boolean:
-                return typeof(val) === 'boolean';
+                return typeof (val) === 'boolean';
             case Function:
-                return typeof(val) === 'function';
+                return typeof (val) === 'function';
             case Object:
-                return typeof(val) === 'object';
+                return typeof (val) === 'object';
             case Array:
                 return toString.call(val) === '[object Array]';
             default:
                 return val instanceof t;
         }
     },
-    build (props) {
+    build(props) {
         let rst = {};
-        if (typeof(props) === 'string') {
+        if (typeof (props) === 'string') {
             rst[props] = {};
         } else if (toString.call(props) === '[object Array]') {
             props.forEach((p) => {
@@ -40,7 +40,7 @@ const Props = {
             });
         } else {
             Object.keys(props).forEach(p => {
-                if (typeof(props[p]) === 'function') {
+                if (typeof (props[p]) === 'function') {
                     rst[p] = {
                         type: [props[p]]
                     }
@@ -57,7 +57,7 @@ const Props = {
         }
         return rst;
     },
-    valid (props, key, val) {
+    valid(props, key, val) {
         let valid = false;
         if (props[key]) {
             if (!props[key].type) {
@@ -68,11 +68,11 @@ const Props = {
         }
         return valid;
     },
-    getValue (props, key, value) {
+    getValue(props, key, value) {
         var rst;
         if (value !== undefined && this.valid(props, key, value)) {
             rst = value;
-        } else if (typeof(props[key].default) === 'function') {
+        } else if (typeof (props[key].default) === 'function') {
             rst = props[key].default();
         } else
             rst = props[key].default;
@@ -82,6 +82,7 @@ const Props = {
 
 export default class {
 
+    /* 子组件 */
     $com = {};
     $events = {};
     $mixins = [];
@@ -94,7 +95,7 @@ export default class {
     data = {};
     methods = {};
 
-    $init ($wxpage, $root, $parent) {
+    $init($wxpage, $root, $parent) {
         let self = this;
 
         this.$wxpage = $wxpage;
@@ -113,7 +114,8 @@ export default class {
 
         let props = this.props;
         let key, val, binded;
-        let inRepeat = false, repeatKey;
+        let inRepeat = false,
+            repeatKey;
 
 
         // save a init data.
@@ -124,8 +126,8 @@ export default class {
         }
 
         if (this.$props) { // generate mapping Props
-            for (key in this.$props) {
-                for (binded in this.$props[key]) {
+            for (key in this.$props) { /* key是组件名 */
+                for (binded in this.$props[key]) { /* binded是属性名 */
                     if (/\.sync$/.test(binded)) { // sync goes to mapping
                         if (!this.$mappingProps[this.$props[key][binded]])
                             this.$mappingProps[this.$props[key][binded]] = {};
@@ -140,18 +142,21 @@ export default class {
                 val = undefined;
                 if ($parent && $parent.$props && $parent.$props[this.$name]) {
                     val = $parent.$props[this.$name][key];
+                    /* 遍历本组件获得的属性，并访问父组件，看有没有特殊操作符 */
                     binded = $parent.$props[this.$name][`v-bind:${key}.once`] || $parent.$props[this.$name][`v-bind:${key}.sync`];
                     if (binded) {
-                        if (typeof(binded) === 'object') {
+                        /* repeat包住的binded是Object */
+                        if (typeof (binded) === 'object') {
                             props[key].repeat = binded.for;
                             props[key].item = binded.item;
                             props[key].index = binded.index;
                             props[key].key = binded.key;
                             props[key].value = binded.value;
-                            
-                            inRepeat = true;
 
-                            let bindfor = binded.for, binddata = $parent;
+                            inRepeat = true; /* 表明是repeat组件 */
+
+                            let bindfor = binded.for,
+                                binddata = $parent;
                             bindfor.split('.').forEach(t => {
                                 binddata = binddata ? binddata[t] : {};
                             });
@@ -175,15 +180,16 @@ export default class {
                         this.data[key] = val.value;
                     }
                 }
-                if (!this.data[key] && !props[key].repeat) {
+                if (!this.data[key] && !props[key].repeat) { /* 不是静态传值也不是repeat */
                     val = Props.getValue(props, key, val);
                     this.data[key] = val;
                 }
             }
         }
 
-        if (typeof this.data === 'function') {
-            this.data = this.data.apply(this.data);
+        if (typeof this.data === 'function') { /* data可以是函数 */
+            /* 前面一段代码往this.data添加属性，如果this.data是函数，并不会被覆盖 */
+            this.data = this.data.apply(this.data); /* this.data 是组件内定义的data和传入的data的合集 */
         }
 
         for (k in this.data) {
@@ -196,7 +202,7 @@ export default class {
         if (inRepeat && repeatKey !== undefined)
             this.$setIndex(repeatKey);
 
-        if (this.computed) {
+        if (this.computed) { /* 计算计算属性 */
             for (k in this.computed) {
                 let fn = this.computed[k];
                 defaultData[`${this.$prefix}${k}`] = fn.call(this);
@@ -209,8 +215,8 @@ export default class {
         if (coms.length) {
             coms.forEach((name) => {
                 const com = this.$com[name];
+                /* 递归初始化组件 */
                 com.$init(this.getWxPage(), $root, this);
-
                 [].concat(com.$mixins, com).forEach((mix) => {
                     mix['onLoad'] && mix['onLoad'].call(com);
                 });
@@ -219,9 +225,9 @@ export default class {
         }
     }
 
-    $initMixins () {
+    $initMixins() {
         if (this.mixins) {
-            if (typeof(this.mixins) === 'function') {
+            if (typeof (this.mixins) === 'function') {
                 this.mixins = [this.mixins];
             }
         } else {
@@ -234,11 +240,10 @@ export default class {
         });
     }
 
-    onLoad () {
-    }
+    onLoad() {}
 
-    setData (k, v) {
-        if (typeof(k) === 'string') {
+    setData(k, v) {
+        if (typeof (k) === 'string') {
             if (v) {
                 let tmp = {};
                 tmp[k] = v;
@@ -250,7 +255,8 @@ export default class {
             }
             return this.$wxpage.setData(k);
         }
-        let t = null, reg = new RegExp('^' + this.$prefix.replace(/\$/g, '\\$'), 'ig');
+        let t = null,
+            reg = new RegExp('^' + this.$prefix.replace(/\$/g, '\\$'), 'ig');
 
         for (t in k) {
             let noPrefix = t.replace(reg, '');
@@ -268,18 +274,18 @@ export default class {
         return this.$root.$wxpage.setData(k);
     }
 
-    getWxPage () {
+    getWxPage() {
         return this.$wxpage;
     }
 
-    getCurrentPages () {
+    getCurrentPages() {
         return getCurrentPages();
     }
 
     /**
      * 对于在repeat中的组件，index改变时需要修改对应的数据
      */
-    $setIndex (index) {
+    $setIndex(index) {
         this.$index = index;
 
         let props = this.props,
@@ -292,14 +298,15 @@ export default class {
                     val = $parent.$props[this.$name][key];
                     binded = $parent.$props[this.$name][`v-bind:${key}.once`] || $parent.$props[this.$name][`v-bind:${key}.sync`];
                     if (binded) {
-                        if (typeof(binded) === 'object') {
-                            let bindfor = binded.for, binddata = $parent;
+                        if (typeof (binded) === 'object') {
+                            let bindfor = binded.for,
+                                binddata = $parent;
                             bindfor.split('.').forEach(t => {
                                 binddata = binddata ? binddata[t] : {};
                             });
 
                             index = Array.isArray(binddata) ? +index : index;
-
+                            /* 这一串ifelse是判断repeat内需要index的值还是item的值 */
                             if (props[key].value === props[key].item) {
                                 val = binddata[index];
                             } else if (props[key].value === props[key].index) {
@@ -309,7 +316,8 @@ export default class {
                             } else {
                                 val = $parent[props[key].value];
                             }
-                            this.$index = index;
+                            this.$index = index;/* 新的inde */
+                            /*以下两行，把循环得到的值赋给相应属性  */
                             this.data[key] = val;
                             this[key] = val;
                             this.$data[key] = util.$copy(this[key], true);
@@ -324,18 +332,22 @@ export default class {
         }
 
     }
-
+    /**
+     * 
+     * @param String 路径
+     * @return 组件 
+     */
     $getComponent(com) {
-        if (typeof(com) === 'string') {
+        if (typeof (com) === 'string') {
             if (com.indexOf('/') === -1) {
                 return this.$com[com];
             } else if (com === '/') {
                 return this.$parent;
             } else {
                 let path = com.split('/');
-                path.forEach((s, i) => {
+                path.forEach((s, i) => {/* 这个foreach有遍历目录之功效 */
                     if (i === 0) {
-                        if (s === '') {   //   /a/b/c
+                        if (s === '') { //   /a/b/c
                             com = this.$root;
                         } else if (s === '.') {
                             // ./a/b/c
@@ -352,10 +364,10 @@ export default class {
                 });
             }
         }
-        return (typeof(com) !== 'object') ? null : com;
+        return (typeof (com) !== 'object') ? null : com;
     }
 
-    $invoke (com, method, ...args) {
+    $invoke(com, method, ...args) {
         com = this.$getComponent(com);
 
         if (!com) {
@@ -364,7 +376,7 @@ export default class {
 
         let fn = com.methods ? com.methods[method] : '';
 
-        if (typeof(fn) === 'function') {
+        if (typeof (fn) === 'function') {
             let $evt = new event('', this, 'invoke');
             let rst = fn.apply(com, args.concat($evt));
             com.$apply();
@@ -373,25 +385,26 @@ export default class {
             fn = com[method];
         }
 
-        if (typeof(fn) === 'function') {
+        if (typeof (fn) === 'function') {
             return fn.apply(com, args);
         } else {
             throw new Error('Invalid method: ' + method);
         }
     }
 
-    $broadcast (evtName, ...args) {
+    $broadcast(evtName, ...args) {
         let com = this;
-        let $evt = typeof(evtName) === 'string' ? new event(evtName, this, 'broadcast') : $evt;
+        let $evt = typeof (evtName) === 'string' ? new event(evtName, this, 'broadcast') : $evt;
         let queue = [com];
 
-        while(queue.length && $evt.active) {
+        while (queue.length && $evt.active) {
             let current = queue.shift();
             for (let c in current.$com) {
                 c = current.$com[c];
                 queue.push(c);
                 let fn = getEventsFn(c, evtName);
                 if (fn) {
+                    /* $apply调用函数，然后调用this.$apply()触发更新 */
                     c.$apply(() => {
                         fn.apply(c, args.concat($evt));
                     });
@@ -401,8 +414,8 @@ export default class {
             }
         }
     }
-
-    $emit (evtName, ...args) {
+    
+    $emit(evtName, ...args) {
         let com = this;
         let source = this;
         let $evt = new event(evtName, source, 'emit');
@@ -414,7 +427,7 @@ export default class {
             let method = this.$parent.$events[this.$name]['v-on:' + evtName];
             if (method && this.$parent.methods) {
                 let fn = this.$parent.methods[method];
-                if (typeof(fn) === 'function') {
+                if (typeof (fn) === 'function') {
                     this.$parent.$apply(() => {
                         fn.apply(this.$parent, args);
                     });
@@ -424,7 +437,8 @@ export default class {
                 }
             }
         }
-        while(com && com.$isComponent !== undefined && $evt.active) {
+        /* 冒泡 */
+        while (com && com.$isComponent !== undefined && $evt.active) {
             // 保存 com 块级作用域组件实例
             let comContext = com;
             let fn = getEventsFn(comContext, evtName);
@@ -444,13 +458,13 @@ export default class {
         }
     }
 
-    $on (evtName, fn) {
+    $on(evtName, fn) {
         if (typeof evtName === 'string') {
             (this.$events[evtName] || (this.$events[evtName] = [])).push(fn);
         } else if (Array.isArray(evtName)) {
             evtName.forEach(k => {
                 this.$on(k, fn);
-            });
+            }); 
         } else if (typeof evtName === 'object') {
             for (let k in evtName) {
                 this.$on(k, evtName[k]);
@@ -459,9 +473,9 @@ export default class {
         return this;
     }
 
-    $once (evtName, fn) {
+    $once(evtName, fn) {
         let self = this;
-        let oncefn = function oncefn () {
+        let oncefn = function oncefn() {
             self.$off(evtName, oncefn);
             fn.apply(self, arguments);
         }
@@ -469,7 +483,7 @@ export default class {
         this.$on(evtName, oncefn);
     }
 
-    $off (evtName, fn) {
+    $off(evtName, fn) {
         // off all events;
         if (evtName === undefined) {
             this.$events = {};
@@ -494,8 +508,8 @@ export default class {
         return this;
     }
 
-    $apply (fn) {
-        if (typeof(fn) === 'function') {
+    $apply(fn) {
+        if (typeof (fn) === 'function') {
             fn.call(this);
             this.$apply();
         } else {
@@ -507,7 +521,7 @@ export default class {
         }
     }
 
-    $digest () {
+    $digest() {
         let k;
         let originData = this.$data;
         this.$$phase = '$digest';
@@ -520,7 +534,8 @@ export default class {
             let readyToSet = {};
             if (this.computed) {
                 for (k in this.computed) { // If there are computed property, calculated every times
-                    let fn = this.computed[k], val = fn.call(this);
+                    let fn = this.computed[k],
+                        val = fn.call(this);
                     if (!util.$isEqual(this[k], val)) { // Value changed, then send to ReadyToSet
                         readyToSet[this.$prefix + k] = val;
                         this[k] = util.$copy(val, true);
@@ -540,7 +555,7 @@ export default class {
                         }
                     }
                     // Send to ReadyToSet
-                    readyToSet[this.$prefix + k] = this[k]; 
+                    readyToSet[this.$prefix + k] = this[k];
                     this.data[k] = this[k];
                     originData[k] = util.$copy(this[k], true);
                     if (this.$repeat && this.$repeat[k]) {
@@ -552,7 +567,7 @@ export default class {
                     if (this.$mappingProps[k]) {
                         Object.keys(this.$mappingProps[k]).forEach((changed) => {
                             let mapping = this.$mappingProps[k][changed];
-                            if (typeof(mapping) === 'object') {
+                            if (typeof (mapping) === 'object') {
                                 this.$parent.$apply();
                             } else if (changed === 'parent' && !util.$isEqual(this.$parent.$data[mapping], this[k])) {
                                 this.$parent[mapping] = this[k];
@@ -598,7 +613,7 @@ export default class {
      * @param  {Function} callback function, if fn is undefined, then return a promise
      * @return {Promsie}  if fn is undefined, then return a promise, otherwise return undefiend
      */
-    $nextTick (fn) {
+    $nextTick(fn) {
         if (typeof fn === 'undefined') {
             return new Promise((resolve, reject) => {
                 this.$$nextTick = function () {
@@ -612,14 +627,15 @@ export default class {
 
 }
 
-function getEventsFn (comContext, evtName) {
+function getEventsFn(comContext, evtName) {
+    /* $events是什么？ */
     let fn = comContext.events ? comContext.events[evtName] : (comContext.$events[evtName] ? comContext.$events[evtName] : undefined);
-    const typeFn = typeof(fn);
+    const typeFn = typeof (fn);
     let fnFn;
     if (typeFn === 'string') {
         // 如果 events[k] 是 string 类型 则认为是调用 methods 上方法
         const method = comContext.methods && comContext.methods[fn];
-        if (typeof(method) === 'function') {
+        if (typeof (method) === 'function') {
             fnFn = method;
         }
     } else if (typeFn === 'function' || Array.isArray(fn)) {
