@@ -47,6 +47,7 @@ export default class extends component {
     }
 
     $route(type, url, params = {}) {
+        /* 拼接连接 */
         if (typeof(url) === 'string') {
             let s = url + '?';
             if (params) {
@@ -60,6 +61,7 @@ export default class extends component {
         } else {
             params = util.$getParams(url.url);
         }
+        /* 根据url得到页面实例 */
         // __route__ will be undefined if it called from onLoad
         if (!this.$parent.__route__) {
             this.$parent.__route__ = getCurrentPages()[0].__route__;
@@ -68,6 +70,7 @@ export default class extends component {
         let absoluteRoute = this.$parent.__route__[0] !== '/' ? ('/' + this.$parent.__route__) : this.$parent.__route__;
         let realPath = util.$resolvePath(absoluteRoute, url.url.split('?')[0]);
         let goTo = this.$parent.$pages[realPath];
+        /* 如果页面实例有onPrefetch */
         if (goTo && goTo.onPrefetch) {
             let prevPage = this.$parent.__prevPage__;
             let preloadData = {};
@@ -76,6 +79,7 @@ export default class extends component {
             }
             goTo.$prefetchData = goTo.onPrefetch(params, {from: this, preload: preloadData});
         }
+        /* 跳转到url页面 */
         return native[type](url);
     }
 

@@ -148,11 +148,13 @@ export default class {
             }
         }
         Object.keys(wx).forEach((key) => {
+            /*noPromiseMethods[key]是false、on开头、不是同步接口  */
             if (!noPromiseMethods[key] && key.substr(0, 2) !== 'on' && !(/\w+Sync$/.test(key))) {
                 Object.defineProperty(native, key, {
                     get () {
                         return (obj) => {
                             obj = obj || {};
+                            /* 如果设置了拦截 */
                             if (self.$interceptors[key] && self.$interceptors[key].config) {
                                 let rst = self.$interceptors[key].config.call(self, obj);
                                 if (rst === false) {
@@ -208,6 +210,7 @@ export default class {
                             } else {
                                 let bak = {};
                                 ['fail', 'success', 'complete'].forEach((k) => {
+                                    /*bak保存原方法 */
                                     bak[k] = obj[k];
                                     obj[k] = (res) => {
                                         if (self.$interceptors[key] && self.$interceptors[key][k]) {

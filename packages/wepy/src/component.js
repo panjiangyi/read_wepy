@@ -564,6 +564,7 @@ export default class {
                         this.$com[$repeat.com].$setIndex(0);
                         this.$com[$repeat.com].$apply();
                     }
+                    /* .sync,twoway在这里映射 */
                     if (this.$mappingProps[k]) {
                         Object.keys(this.$mappingProps[k]).forEach((changed) => {
                             let mapping = this.$mappingProps[k][changed];

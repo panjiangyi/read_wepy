@@ -20,16 +20,16 @@ let $bindEvt = (config, com, prefix) => {
     Object.getOwnPropertyNames(com.components || {}).forEach((name) => {
         let cClass = com.components[name];
         let child = new cClass();
-        child.$initMixins();
+        child.$initMixins(); /* 加载组件的mixins */
         child.$name = name;
         let comPrefix = prefix ? (prefix + child.$name + '$') : ('$' + child.$name + '$');
-
         com.$com[name] = child;
 
-        $bindEvt(config, child, comPrefix);
+        $bindEvt(config, child, comPrefix); /* 递归 */
     });
     Object.getOwnPropertyNames(com.constructor.prototype || []).forEach((prop) => {
-        if(prop !== 'constructor' && PAGE_EVENT.indexOf(prop) === -1) {
+        /* 不是constructor也不是生命周期 */
+        if (prop !== 'constructor' && PAGE_EVENT.indexOf(prop) === -1) {
             config[prop] = function () {
                 com.constructor.prototype[prop].apply(com, arguments);
                 com.$apply();
@@ -47,10 +47,12 @@ let $bindEvt = (config, com, prefix) => {
         config[com.$prefix + method] = function (e, ...args) {
             let evt = new event('system', this, e.type);
             evt.$transfor(e);
-            let wepyParams = [], paramsLength = 0, tmp, p, comIndex;
+            let wepyParams = [],
+                paramsLength = 0,
+                tmp, p, comIndex;
             if (e.currentTarget && e.currentTarget.dataset) {
                 tmp = e.currentTarget.dataset;
-                while(tmp['wpy' + method.toLowerCase() + (p = String.fromCharCode(65 + paramsLength++))] !== undefined) {
+                while (tmp['wpy' + method.toLowerCase() + (p = String.fromCharCode(65 + paramsLength++))] !== undefined) {
                     wepyParams.push(tmp['wpy' + method.toLowerCase() + p]);
                 }
                 if (tmp.comIndex !== undefined) {
@@ -61,8 +63,9 @@ let $bindEvt = (config, com, prefix) => {
             // Update repeat components data.
             if (comIndex !== undefined) {
                 comIndex = ('' + comIndex).split('-');
-                let level = comIndex.length, tmp = level;
-                while(level-- > 0) {
+                let level = comIndex.length,
+                    tmp = level;
+                while (level-- > 0) {
                     tmp = level;
                     let tmpcom = com;
                     while (tmp-- > 0) {
@@ -90,7 +93,7 @@ let $bindEvt = (config, com, prefix) => {
 
 
 export default {
-    $createApp (appClass, appConfig) {
+    $createApp(appClass, appConfig) {
         let config = {};
         let app = new appClass();
 
@@ -120,15 +123,26 @@ export default {
         });
         return config;
     },
-    $createPage (pageClass, pagePath) {
+
+    /**
+     *
+     * 工厂方法，实例化page
+     * @param {*} pageClass 自己编写的wpy文件里的组件的class
+     * @param {*} pagePath
+     * @returns
+     */
+    $createPage(pageClass, pagePath) {
         let self = this;
-        let config = {}, k;
+        let config = {},
+            k;
         let page = new pageClass();
         if (typeof pagePath === 'string') {
+            /* 把实例化的page储存在app实例的$pages数组里 */
             this.$instance.$pages['/' + pagePath] = page;
         }
-        page.$initMixins();
+        page.$initMixins();/* 初始化page的mixmin */
         // This will be a circum Object
+        /* 不清楚合适会有pagePath为布尔值的情况，司机宝小程序项目无此情况 */
         if ((typeof pagePath === 'boolean' && pagePath) || (arguments.length === 3 && arguments[2] === true))
             config.$page = page;
 
@@ -136,7 +150,7 @@ export default {
 
             page.$name = pageClass.name || 'unnamed';
             page.$init(this, self.$instance, self.$instance);
-
+            /* 当前显示的page */
             let prevPage = self.$instance.__prevPage__;
             let secParams = {};
             secParams.from = prevPage ? prevPage : undefined;
@@ -191,8 +205,8 @@ export default {
                     let rst;
 
                     if (v === 'onShareAppMessage') {
-						page[v] && (rst = page[v].apply(page, args));
-						return rst;
+                        page[v] && (rst = page[v].apply(page, args));
+                        return rst;
                     }
 
                     [].concat(page.$mixins, page).forEach((mix) => {
