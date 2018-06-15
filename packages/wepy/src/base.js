@@ -150,7 +150,7 @@ export default {
 
             page.$name = pageClass.name || 'unnamed';
             page.$init(this, self.$instance, self.$instance);
-            /* 当前显示的page */
+            /* 上一个page */
             let prevPage = self.$instance.__prevPage__;
             let secParams = {};
             secParams.from = prevPage ? prevPage : undefined;
@@ -174,6 +174,7 @@ export default {
 
         config.onShow = function (...args) {
 
+            /* 保存当前页面至__prevPage__，供下一个页面的onload查询*/
             self.$instance.__prevPage__ = page;
 
             [].concat(page.$mixins, page).forEach((mix) => {
