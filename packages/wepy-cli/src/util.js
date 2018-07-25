@@ -493,6 +493,7 @@ const utils = {
         let ignoreFile = path.join(this.currentDir, path.sep, '.wepyignore');
         return this.isFile(ignoreFile) ? this.readFile(ignoreFile) : '';
     },
+    /* 获取某个文件夹里的文件，并缓存 */
     getFiles (dir = process.cwd(), prefix = '') {
         let cfiles = cache.getFileList(dir);
         if (cfiles)

@@ -30,19 +30,19 @@ export default {
         });
   
         let pkgOption = this.getPkg();
-        let pkg = pkgOption.pkg;
-        let cwd = pkgOption.dir;
-        let ext = cache.getExt();
+        let pkg = pkgOption.pkg;/* package.json对象 */
+        let cwd = pkgOption.dir;/* 根目录 */
+        let ext = cache.getExt();/* wepy文件后缀默认是wpy */
         
         // 优先级递减
         this.aliasFields.forEach(fields => {
             // 归类
             util.isObject(pkg[fields]) && Object.keys(pkg[fields] || {}).forEach(key => {
                 // module形式的fieldsAlias归置于alias中，例： "xyz": "./src/xyz.js"，alias优先级较大
-                if (key.indexOf('.') === -1) {
+                if (key.indexOf('.') === -1) {/* 绝对路径 */
                     // => "xyz"、"xyz-xyz"
                     let value;
-                    if (!pkg[fields][key]) {
+                    if (!pkg[fields][key]) {/* 无值 */
                         value = 'false';
                     } else {
                         value = path.resolve(cwd, pkg[fields][key]);
@@ -64,11 +64,11 @@ export default {
                   
                     if (path.extname(value) === ext)
                         value = value.replace(ext, '');
-                  
+                    /* 把package.json里aliasFields的属性保存在fieldsAlias里 */
                     this.fieldsAlias = Object.assign({}, { [key]: value }, this.fieldsAlias || {});
                 }
             });
-        });
+        }); 
 
         this.modulePaths = this.modules.map(v => {
             if (path.isAbsolute(v)) {
@@ -80,7 +80,7 @@ export default {
         this._cacheModules = {};
         this._cacheAlias = {};
     },
-
+    /* 找到模块 */
     walk (file) {
         if (this._cacheModules[file]) {
             return this._cacheModules[file];
